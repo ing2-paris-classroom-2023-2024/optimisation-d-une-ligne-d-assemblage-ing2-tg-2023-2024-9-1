@@ -1,0 +1,115 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_V 100
+
+// Structure d'une arête
+typedef struct {
+    int Sommet;
+    int poids;
+} Arrete;
+
+// Structure pour la file de priorité
+typedef struct {
+    Arrete array[MAX_V];
+    int taille;
+} File;
+
+int matrice[MAX_V][MAX_V]; // Matrice d'adjacence
+int som;                   // Nbre de sommets
+
+
+// Fonction de comparaison pour le tri d'arêtes par poids (pour Kruskal)
+int Comparaison(const void *a, const void *b) {
+    return ((Arrete *)a)->poids - ((Arrete *)b)->poids;
+}
+
+
+
+// Fonction qui utilise la récursion pour trouver l'origine dans la struct
+int cherche(Origine *constante, int i) {
+    if (constante->ori[i] != i) {
+        constante->ori[i] = cherche(constante, constante->ori[i]);
+    }
+    return constante->ori[i];
+}
+
+void ensemblesArretes(Origine *constante, int x, int y) {
+    int choixY = cherche(constante, y);
+    int choixX = cherche(constante, x);
+
+    if (choixX != choixY) {
+        if (constante->val[choixX] < constante->val[choixY]) {
+            constante->ori[choixX] = choixY;
+        } else if (constante->val[choixX] > constante->val[choixY]) {
+            constante->ori[choixY] = choixX;
+        } else {
+            constante->ori[choixY] = choixX;
+            constante->val[choixX]++;
+        }
+    }
+}
+
+// Algorithme de Kruskal
+void Kruskal() {
+    Origine *disjointSet = CreationDis(som);
+
+    // Initialiser un ensemble vide pour stocker les arêtes de l'arbre couvrant minimal
+    Arrete *mstEdges = (Arrete *)malloc((som - 1) * sizeof(Arrete));
+    int taille = 0;
+    int poidstot = 0;  // Variable pour stocker le poids total
+
+    for (int i = 0; i < som; i++) {
+        for (int j = i; j < som; j++) {
+            if (matrice[i][j] != 0) {
+                Arrete arrete;
+                arrete.Sommet = i;
+                arrete.poids = matrice[i][j];
+                mstEdges[taille++] = arrete;
+            }
+        }
+    }
+
+    qsort(mstEdges, taille, sizeof(Arrete), Comparaison);
+
+    for (int i = 0; i < taille; i++) {
+        int endroitU = cherche(disjointSet, mstEdges[i].Sommet);
+        int endroitV = cherche(disjointSet, mstEdges[i].poids);
+
+        if (endroitU != endroitV) {
+            ensemblesArretes(disjointSet, endroitU, endroitV);
+            poidstot += mstEdges[i].poids;  // Ajoute le poids de l'arête au total
+        }
+    }
+
+    // On affiche les arêtes de l'arbre couvrant minimal
+    printf("Arêtes de l'arbre couvrant minimal (Kruskal) :\n");
+    for (int i = 0; i < taille; i++) {
+        printf("%d - %d : %d\n", mstEdges[i].Sommet, mstEdges[i].poids, mstEdges[i].poids);
+    }
+
+    // On affiche le poids total minimum de l'arbre
+    printf("Poids total minimum de l'arbre couvrant minimal : %d\n", poidstot);
+
+
+    // Libérer la mémoire
+    free(mstEdges);
+    free(disjointSet->ori);
+    free(disjointSet->val);
+    free(disjointSet);
+}
+
+
+
+int main() {
+    char nom[100];
+
+    printf("Entrez le nom du fichier texte : ");
+    scanf("%s", nom);
+
+    Graph(nom);
+
+    Kruskal();
+
+    return 0;
+}
