@@ -1,0 +1,191 @@
+#include <stdio.h>
+#include <stdbool.h>
+#include <limits.h>
+
+#define MAX_V 100
+
+// Structure d'une arête dans la file de priorité
+typedef struct {
+    int Sommet;
+    int poids;
+} Noeud;
+
+// Structure pour la file de priorité
+typedef struct {
+    Noeud array[MAX_V];
+    int taille;
+} File;
+
+int matrice[MAX_V][MAX_V]; // Matrice d'adjacence
+int som;                   // Nbe de sommets
+
+int parent[MAX_V];       // Tableau pour stocker les précurseurs des sommets dans le chemin le plus court
+int dist[MAX_V];         // Tableau pour stocker les distances minimales des sommets à partir de la source
+
+// Initialise la file de priorité
+File initializePriorityQueue() {
+    File pq;
+    pq.taille = 0;
+    return pq;
+}
+
+// Échange deux nœuds
+void swap(Noeud *a, Noeud *b) {
+    Noeud temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+// Vérifie si un sommet est déjà dans la file de priorité
+bool contains(File pq, int Sommet) {
+    for (int i = 0; i < pq.taille; i++) {
+        if (pq.array[i].Sommet == Sommet) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Met à jour la distance d'un sommet déjà dans la file de priorité
+void decreaseKey(File *pq, int Sommet, int poids) {
+    int i;
+    // Trouve le sommet dans la file de priorité
+    for (i = 0; i < pq->taille; i++) {
+        if (pq->array[i].Sommet == Sommet) {
+            pq->array[i].poids = poids;
+            break;
+        }
+    }
+
+    // Réajuste la file de priorité
+    while (i != 0 && pq->array[i].poids < pq->array[(i - 1) / 2].poids) {
+        swap(&pq->array[i], &pq->array[(i - 1) / 2]);
+        i = (i - 1) / 2;
+    }
+}
+
+// Ajoute un sommet à la file de priorité ou met à jour sa distance si déjà présent
+void push(File *pq, int Sommet, int poids) {
+    if (contains(*pq, Sommet)) {
+        decreaseKey(pq, Sommet, poids);
+        return;
+    }
+
+    int i = pq->taille++;
+    pq->array[i].Sommet = Sommet;
+    pq->array[i].poids = poids;
+
+    // Réajuste la file de priorité
+    while (i != 0 && pq->array[i].poids < pq->array[(i - 1) / 2].poids) {
+        swap(&pq->array[i], &pq->array[(i - 1) / 2]);
+        i = (i - 1) / 2;
+    }
+}
+
+// Supprime et renvoie le sommet avec la distance la plus courte de la file de priorité
+Noeud pop(File *pq) {
+    Noeud root = pq->array[0];
+
+    pq->array[0] = pq->array[--pq->taille];
+
+    int i = 0;
+    // Réajuste la file de priorité
+    while (2 * i + 1 < pq->taille) {
+        int j = 2 * i + 1;
+        if (j + 1 < pq->taille && pq->array[j].poids > pq->array[j + 1].poids) {
+            j++;
+        }
+        if (pq->array[i].poids <= pq->array[j].poids) {
+            break;
+        }
+        swap(&pq->array[i], &pq->array[j]);
+        i = j;
+    }
+
+    return root;
+}
+
+// Vérifie si la file de priorité est vide
+bool isEmpty(File pq) {
+    return pq.taille == 0;
+}
+
+// Affiche le chemin le plus court en utilisant la récursivité
+void printPath(int j) {
+    if (parent[j] == -1) {
+        printf("%d", j);
+        return;
+    }
+    printPath(parent[j]);
+    printf("->%d", j);
+}
+
+// Implémentation de l'algorithme de Dijkstra
+void dijkstra(int src, int dest) {
+    for (int i = 0; i < som; i++) {
+        dist[i] = INT_MAX;
+        parent[i] = -1;
+    }
+    dist[src] = 0;
+
+    File pq = initializePriorityQueue();
+    push(&pq, src, dist[src]);
+
+    while (!isEmpty(pq)) {
+        int u = pop(&pq).Sommet;
+
+        for (int v = 0; v < som; v++) {
+            if (matrice[u][v] && dist[u] + matrice[u][v] < dist[v]) {
+                parent[v] = u;
+                dist[v] = dist[u] + matrice[u][v];
+                push(&pq, v, dist[v]);
+            }
+        }
+    }
+
+    printf("Le plus court chemin entre %d et %d est: ", src, dest);
+    printPath(dest);
+    printf(" de longueur %d.\n", dist[dest]);
+}
+
+// Charge le graphe à partir d'un fichier
+void loadGraph(const char *filename) {
+    FILE *file = fopen(filename, "r");
+    if (file == NULL) {
+        perror("Erreur d'ouverture du fichier");
+        return;
+    }
+
+    fscanf(file, "%d", &som);  // Lire le nombre de sommets
+    for (int i = 0; i < som; i++)  // Ignorer la ligne des sommets
+        fscanf(file, "%*d");
+
+    int num_edges;
+    fscanf(file, "%d", &num_edges);  // Lire le nombre d'arêtes
+
+    // Pour chaque arête, lire les sommets de départ, d'arrivée, et le poids
+    for (int i = 0; i < num_edges; i++) {
+        int start, end, weight;
+        fscanf(file, "%d %d %d", &start, &end, &weight);
+        matrice[start][end] = weight;
+        matrice[end][start] = weight;  // Ajout pour le graphe non dirigé
+    }
+    fclose(file);
+}
+
+int main() {
+    char filename[100];
+    printf("Entrez le nom du fichier contenant le graphe : ");
+    scanf("%s", filename);
+
+    loadGraph(filename);
+
+    int i, j;
+    printf("Entrez le sommet de départ (i) : ");
+    scanf("%d", &i);
+    printf("Entrez le sommet d'arrivée (j) : ");
+    scanf("%d", &j);
+
+    dijkstra(i, j);
+    return 0;
+}
