@@ -1,6 +1,69 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "header.h"
+
+
+t_sommet initialiser(int numero, char *nom_sommet){ //assigner le nom et le numero du sommet lu
+    t_sommet sommet;
+    int longueur ;
+
+    longueur = strlen(nom_sommet);
+    sommet.nom = NULL;
+    sommet.numero = numero;
+
+    sommet.nom = malloc(sizeof(char) * longueur);
+    strcpy(sommet.nom, nom_sommet);
+
+    return sommet;
+}
+
+void initialiser_graphe(int ordre, t_graphe *graphe){ //cree le graphe donc cree ses variables
+    graphe->ordre = ordre;
+    graphe->matrice = malloc(sizeof(int) * ordre + 15);
+    for(int i=0; i<graphe->ordre; i++){
+        graphe->matrice[i] = malloc(sizeof(int) * ordre);
+    }
+
+    graphe->tab = malloc(sizeof(t_sommet) * ordre);
+}
+
+void affichage(t_graphe *graphe){ //juste afficher le graphe en ordre
+    for(int i = 0; i<graphe->ordre; i++){
+        for(int j=0; j<7; j++){
+            printf("%d", graphe->matrice[j][i]);
+        }
+        printf("\n");
+    }
+    for(int i = 0; i<graphe->ordre; i++){
+        printf("%s\n", graphe->tab[i].nom);
+    }
+}
+
+void lire_fichier(t_graphe *graphe){
+    char nom_sommet[50];
+    FILE *fichier = NULL;
+    fichier = fopen("lol.txt", "r");
+    if(fichier != NULL){
+
+        fscanf(fichier, "%d", &(graphe->ordre));
+
+        initialiser_graphe(graphe->ordre, graphe);
+        for(int i=0; i<graphe->ordre; i++){ //lire le fichier
+            fscanf(fichier, "%d %d %d %d %d %d %d", &(graphe->matrice[0][i]), &(graphe->matrice[1][i]), &(graphe->matrice[2][i]), &(graphe->matrice[3][i]), &(graphe->matrice[4][i]), &(graphe->matrice[5][i]), &(graphe->matrice[6][i])); //pu mieux coder
+        }
+        for(int i=0; i<graphe->ordre; i++){
+            fgets(nom_sommet, 1000, fichier);
+            graphe->tab[i] = initialiser(nom_sommet[0], nom_sommet); //cree les sommets
+        }
+        for(int i=0; i<1; i++){
+            fgets(nom_sommet, 1000, fichier);
+            graphe->tab[i] = initialiser(nom_sommet[0], nom_sommet);
+        }
+        fclose(fichier);
+    }
+}
+
 // Structure pour représenter un graphe par matrice d'adjacence
 typedef struct Graph {
     int V; // Nombre de sommets
