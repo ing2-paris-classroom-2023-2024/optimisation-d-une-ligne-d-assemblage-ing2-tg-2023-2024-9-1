@@ -1,0 +1,568 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <time.h>
+#include <windows.h>
+#include <malloc.h>
+#include <string.h>
+//#include <cstdlib>
+
+
+#define LIGNE 7
+#define COLONNE 7
+#define LIGNES 7
+#define COLONNES 7
+#define TUILES_ADDITIONNELLES 34
+
+void gotoligcol( int lig, int col ) {
+// ressources
+    COORD mycoord;
+    mycoord.X = col;
+    mycoord.Y = lig;
+    SetConsoleCursorPosition( GetStdHandle( STD_OUTPUT_HANDLE ), mycoord );
+}
+
+void Color(int couleurDuTexte,int couleurDeFond) // fonction d'affichage de couleurs
+{
+    HANDLE H=GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(H,couleurDeFond*16+couleurDuTexte);
+}
+
+typedef struct {
+    char couleur;
+    bool utilisee;
+} Couleur;
+
+typedef struct{
+    char couleur;
+    int x, y;
+} Pion;
+
+typedef struct{
+    char* nom;
+    Pion pion;
+} Joueur;
+
+typedef struct{
+    Joueur* joueur;
+} Jeu;
+
+/*
+bool couleurEstValide(char couleur){
+    if ((couleur == 'r') || (couleur == 'R') || (couleur == 'v') || (couleur == 'V') || (couleur == 'b') || (couleur == 'B') || (couleur == 'j') || (couleur == 'J')){
+        return true;
+    }
+    return false;
+};
+*/
+
+bool couleurEstValide(Couleur couleurs[4], char couleur) {
+    for (int i = 0; i < 4; i++) {
+        if (couleur == couleurs[i].couleur && !couleurs[i].utilisee) {
+            couleurs[i].utilisee = true;
+            return true;
+        }
+    }
+    return false;
+};
+
+void couleursValides(Couleur couleurs[4], char couleursValides[8]) {
+    int j = 0;
+    for (int i = 0; i < 4; i++) {
+        if (!couleurs[i].utilisee) {
+            couleursValides[j] = couleurs[i].couleur;
+            j++;
+            couleursValides[j] = ',';
+            j++;
+        }
+    }
+    couleursValides[j-1] = '\0';
+}
+
+Pion creerPion(char couleur){
+    Pion* pion = (Pion*) malloc(sizeof(Pion));
+    pion->couleur = couleur;
+    if (couleur=='r'){
+        pion->x = 0;
+        pion->y = 0;
+    }
+    if (couleur=='v'){
+        pion->x = 6;
+        pion->y = 6;
+    }
+    if (couleur=='j'){
+        pion->x = 6;
+        pion->y = 0;
+    }
+    if (couleur=='b'){
+        pion->x = 0;
+        pion->y = 6;
+    }
+    return *pion;
+}
+
+Joueur* creerJoueur(char couleur, char* nom){
+    Joueur* joueur = (Joueur*) malloc(sizeof(Joueur));
+
+    joueur->nom = malloc(strlen(nom) + 1);
+    strcpy(joueur->nom , nom);
+
+    joueur->pion = creerPion(couleur);
+    return joueur;
+}
+
+int nouvellePartie() {
+    Jeu jeu;
+    int nbJoueurs = 0;
+
+    Couleur rouge;
+    rouge.couleur = 'r';
+    rouge.utilisee = false;
+    Couleur jaune;
+    jaune.couleur = 'j';
+    jaune.utilisee = false;
+    Couleur vert;
+    vert.couleur = 'v';
+    vert.utilisee = false;
+    Couleur bleu;
+    bleu.couleur = 'b';
+    bleu.utilisee = false;
+    Couleur couleurs[4] = {rouge, jaune, vert, bleu };
+
+    do {
+        printf("Saisir le nombre de joueurs:\n");
+        scanf("%d", &nbJoueurs);
+        system("cls");
+        jeu.joueur = malloc(sizeof(Joueur) * nbJoueurs);
+
+    }  while (nbJoueurs > 4);
+
+
+    for (int i = 0; i < nbJoueurs; i++) {
+        char couleurPion = ' ';
+        while (!couleurEstValide(couleurs, couleurPion)) {
+            char listeCouleursValides[8];
+            couleursValides(couleurs, listeCouleursValides);
+            printf("Couleur de pion (%s)?\n", listeCouleursValides);
+            scanf(" %c", &couleurPion);
+        }
+
+        char nom[255];
+        printf("Saisir votre nom:\n");
+        scanf("%s", nom);
+
+        Joueur *joueur = creerJoueur(couleurPion, nom);
+        jeu.joueur[i] = *joueur;
+    }
+
+    for (int i = 0; i < nbJoueurs; i++) {
+        const Joueur joueur = jeu.joueur[i];
+        printf("Joueur %d: %s (color: %c)\n", i, joueur.nom, joueur.pion.couleur);
+    }
+    return nbJoueurs;
+}
+// Structure pour représenter une tuile du labyrinthe
+typedef struct {
+    char type;
+    int orientation;
+    char tresor;
+} Tuile;
+
+// Tableau pour stocker les tuiles du labyrinthe
+Tuile labyrinthe[LIGNES][COLONNES];
+
+// Fonction pour générer les tuiles supplémentaires
+void genererTuilesSupplementaires(Tuile *tuiles) {
+    // Générer les 6 tuiles T avec trésor
+    for (int i = 0; i < 6; i++) {
+        tuiles[i].type = 'T';
+        tuiles[i].orientation = rand() % 4;
+    }
+    // Générer les 6 tuiles L avec trésor
+    for (int i = 6; i < 12; i++) {
+        tuiles[i].type = 'L';
+        tuiles[i].orientation = rand() % 4;
+    }
+    // Générer les 10 tuiles L
+    for (int i = 12; i < 22; i++) {
+        tuiles[i].type = 'L';
+        tuiles[i].orientation = rand() % 4;
+    }
+    // Générer les 12 tuiles I
+    for (int i = 22; i < 34; i++) {
+        tuiles[i].type = 'I';
+        tuiles[i].orientation = rand() % 2;
+    }
+}
+
+// Fonction pour afficher le labyrinthe
+void afficherLabyrinthe() {
+    //gotoligcol(0,0);
+    int L[21][21];
+    //Color(7, 2);
+    //int t[2][2];
+    int indiceTuile = 0;
+    Tuile tuiles[TUILES_ADDITIONNELLES];
+
+    genererTuilesSupplementaires(tuiles);
+    for (int i = 0; i < LIGNES; i++) {
+        for (int j = 0; j < COLONNES; j++) {
+            Tuile tuile = labyrinthe[i][j];
+            // Generate and display the fixed tiles
+            if (i == 0 && j == 0) {
+                tuile.type='L';
+                tuile.orientation=3;
+
+            }
+            if (i == 0 && j == 2) {
+                tuile.type='T';
+                tuile.orientation=0;
+
+            }
+            if (i == 0 && j == 4) {
+                tuile.type='T';
+                tuile.orientation=0;
+
+            }
+            if (i == 0 && j == 6) {
+                tuile.type='L';
+                tuile.orientation=2;
+
+            }
+            // tuiles fixes de la deuxieme ligne
+            if (i == 2 && j == 0) {
+                tuile.type='T';
+                tuile.orientation=1;
+
+            } if (i == 2 && j == 2) {
+                tuile.type='T';
+                tuile.orientation=1;
+
+            } if (i == 2 && j == 4) {
+                tuile.type='T';
+                tuile.orientation=0;
+
+            } if (i == 2 && j == 6) {
+                tuile.type='T';
+                tuile.orientation=3;
+
+            }
+            // ligne 4
+            if (i == 4 && j == 0) {
+                tuile.type='T';
+                tuile.orientation=1;
+
+            } if (i == 4 && j == 2) {
+                tuile.type='T';
+                tuile.orientation=2;
+
+            } if (i == 4 && j == 4) {
+                tuile.type='T';
+                tuile.orientation=3;
+
+            } if (i == 4 && j == 6) {
+                tuile.type='T';
+                tuile.orientation=3;
+
+            }
+            if(i == 6 && j == 0) {
+                tuile.type='L';
+                tuile.orientation=0;
+
+            }  if (i == 6 && j == 2) {
+                tuile.type='T';
+                tuile.orientation=2;
+
+            }  if (i == 6 && j == 4) {
+                tuile.type='T';
+                tuile.orientation=2;
+
+            }  if (i == 6 && j == 6) {
+                tuile.type='L';
+                tuile.orientation=1;
+
+            }
+            else if (i%2!=0 || j%2!=0){
+                tuile = tuiles[rand() % TUILES_ADDITIONNELLES];
+                //Tuile tuile = labyrinthe[i][j];
+
+            }
+            if (tuile.type=='T'){
+                if (tuile.orientation==0){
+                    int t[3][3]={{219,219,219},{32,32,32},{219,32,219}};
+                    for (int o=0;o<3;o++){
+                        for(int p=0;p<3;p++){
+                            L[i*3+o][j*3+p]=t[o][p];
+                            //printf("%c",t[o][p]);
+                        }
+                        //printf("\n");
+                    }
+                    if(j==6){
+                        //printf("\n");
+                    }
+                }
+                if (tuile.orientation==1){
+                    int t[3][3]={{219,32,219},{219,32,32},{219,32,219}};
+                    for (int o=0;o<3;o++){
+                        for(int p=0;p<3;p++){
+                            L[i*3+o][j*3+p]=t[o][p];
+                            //printf("%c",t[o][p]);
+                        }
+                        //printf("\n");
+                    }
+                    if(j==6){
+                        //printf("\n");
+                    }
+                }
+                if (tuile.orientation==2){
+                    int t[3][3]={{219,32,219},{32,32,32},{219,219,219}};
+                    for (int o=0;o<3;o++){
+                        for(int p=0;p<3;p++){
+                            L[i*3+o][j*3+p]=t[o][p];
+                            //printf("%c",t[o][p]);
+                        }
+                        //printf("\n");
+                    }
+                    if(j==6){
+                        //printf("\n");
+                    }
+                }
+                if (tuile.orientation==3){
+                    int t[3][3]={{219,32,219},{32,32,219},{219,32,219}};
+                    for (int o=0;o<3;o++){
+                        for(int p=0;p<3;p++){
+                            L[i*3+o][j*3+p]=t[o][p];
+                            //printf("%c",t[o][p]);
+                        }
+                        //printf("\n");
+                    }
+                    if(j==6){
+                        //printf("\n");
+                    }
+                }
+            }
+            if (tuile.type=='L'){
+                if (tuile.orientation==0){
+                    int t[3][3]={{219,32,219},{219,32,32},{219,219,219}};
+                    for (int o=0;o<3;o++){
+                        for(int p=0;p<3;p++){
+                            L[i*3+o][j*3+p]=t[o][p];
+                            //printf("%c",t[o][p]);
+                        }
+                        //printf("\n");
+                    }
+                    if(j==6){
+                        //printf("\n");
+                    }
+                }
+                if (tuile.orientation==1){
+                    int t[3][3]={{219,32,219},{32,32,219},{219,219,219}};
+                    for (int o=0;o<3;o++){
+                        for(int p=0;p<3;p++){
+                            L[i*3+o][j*3+p]=t[o][p];
+                            //printf("%c",t[o][p]);
+                        }
+                        //printf("\n");
+                    }
+                    if(j==6){
+                        //printf("\n");
+                    }
+                }
+                if (tuile.orientation==2){
+                    int t[3][3]={{219,219,219},{32,32,219},{219,32,219}};
+                    for (int o=0;o<3;o++){
+                        for(int p=0;p<3;p++){
+                            L[i*3+o][j*3+p]=t[o][p];
+                            //printf("%c",t[o][p]);
+                        }
+                        //printf("\n");
+                    }
+                    if(j==6){
+                        //printf("\n");
+                    }
+                }
+                if (tuile.orientation==3){
+                    int t[3][3]={{219,219,219},{219,32,32},{219,32,219}};
+                    for (int o=0;o<3;o++){
+                        for(int p=0;p<3;p++){
+                            L[i*3+o][j*3+p]=t[o][p];
+                            //printf("%c",t[o][p]);
+                        }
+                        //printf("\n");
+                    }
+                    if(j==6){
+                        //printf("\n");
+                    }
+                }
+            }
+            if (tuile.type=='I'){
+                if (tuile.orientation==0){
+                    int t[3][3]={{219,32,219},{219,32,219},{219,32,219}};
+                    for (int o=0;o<3;o++){
+                        for(int p=0;p<3;p++){
+                            L[i*3+o][j*3+p]=t[o][p];
+                            //printf("%c",t[o][p]);
+                        }
+                        //printf("\n");
+                    }
+                    if(j==6){
+                        //printf("\n");
+                    }
+                }
+                if (tuile.orientation==1){
+                    int t[3][3]={{219,219,219},{32,32,32},{219,219,219}};
+                    for (int o=0;o<3;o++){
+                        for(int p=0;p<3;p++){
+                            L[i*3+o][j*3+p]=t[o][p];
+                            //printf("%c",t[o][p]);
+                        }
+                        //printf("\n");
+                    }
+                    if(j==6){
+                        //printf("\n");
+                    }
+                }
+            }
+            //printf("\t");
+            //gotoligcol(0,30);
+        }
+
+    }
+    for (int k=0;k<21;k++){
+        for (int l=0;l<21;l++){
+            printf("%c%c",L[k][l],L[k][l]);
+        }
+        printf("\n");
+    }
+}
+
+
+
+
+
+int main() {
+    int quitter=0;
+    Pion pions[4];
+    pions[0] = creerPion('r'); // rouge
+    pions[1] = creerPion('v'); // vert
+    pions[2] = creerPion('j'); // jaune
+    pions[3] = creerPion('b'); // bleu
+
+    char matrix[LIGNE][COLONNE];
+    int i, j;
+    int nbJoueurs=nouvellePartie();
+    // Initialisez la matrice ici, par exemple avec des zéros
+    for (i = 0; i < LIGNE; i++) {
+        for (j = 0; j < COLONNE; j++) {
+            matrix[i][j] = '-';
+        }
+    }
+    for (i = 0; i < 4; i++) {
+        matrix[pions[i].x][pions[i].y] = 'O';
+    }
+    bool distributed[24] = {false};  // initialise toutes les cartes à non-distribuées
+    char *symbols[] = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
+                       "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X"};
+
+    typedef struct Card {
+        char *symbol;
+        int index;
+    } Card;
+
+    Card deck[24];
+    for (int i = 0; i < 24; i++) {
+        deck[i].symbol = symbols[i];
+        deck[i].index = i;
+    }
+
+    srand(time(NULL));  // initialisation de la graine de génération de nombres aléatoires
+
+// mélange des cartes
+    for (int i = 0; i < 24; i++) {
+        int j = rand() % 24;  // génère un nombre aléatoire entre 0 et 23
+        Card temp = deck[i];
+        deck[i] = deck[j];
+        deck[j] = temp;
+    }
+    for (i = 0; i < LIGNE; i++) {
+        for (j = 0; j < COLONNE; j++) {
+            if (i==0 && j==0){
+                Color(4,0);
+            }
+            else if (i==0 && j==6){
+                Color(14,0);
+            }
+            else if (i==6 && j==0){
+                Color(1,0);
+            }
+            else if (i==6 && j==6){
+                Color(2,0);
+            }
+            else{
+                Color(15,0);
+            }
+            printf("%c ", matrix[i][j]);
+        }
+        printf("\n");
+    }
+    Color(15,0);
+    //printf("Combien de joueurs participent a la partie ? ");
+    //int nbJoueurs;
+    //scanf("%d", &nbJoueurs);
+
+    Card *hands[nbJoueurs];  // tableau de mains de cartes pour chaque joueur
+    for (int i = 0; i < nbJoueurs; i++)
+        hands[i] = malloc(sizeof(Card) * 24/nbJoueurs);  // chaque main comportera 8 cartes au maximum
+
+    // distribution des cartes aux joueurs
+    int num_cards = 24;  // nombre de cartes restantes à distribuer
+    for (int i = 0; i < (24/nbJoueurs) && num_cards > 0; i++)  // chaque joueur reçoit 8 cartes au maximum et on arrête la boucle si toutes les cartes ont été distribuées
+    {
+        for (int j = 0; j < nbJoueurs; j++)
+        {
+            int index;
+            do
+            {
+                index = rand() % 24;  // génère un nombre aléatoire entre 0 et 23
+            } while (distributed[index]);  // on recommence tant que la carte a déjà été distribuée
+
+            hands[j][i] = deck[index];
+            distributed[index] = true;  // on marque la carte comme distribuée
+            num_cards--;  // on décrémente le compteur de cartes restantes
+        }
+    }
+    while(quitter==0) {
+// affichage des mains de chaque joueur
+        // affichage des mains de chaque joueur
+        for (int i = 0; i < nbJoueurs; i++) {
+            printf("Joueur %d : ", i);
+            for (int j = 0; j < (24 / nbJoueurs); j++) {
+                printf("%s ", hands[i][j].symbol);
+            }
+            printf("\n");
+        }
+        // Initialiser le générateur de nombres aléatoires
+        srand(time(NULL));
+
+        // Générer les tuiles supplémentaires
+        Tuile tuiles_supplementaires[TUILES_ADDITIONNELLES];
+        genererTuilesSupplementaires(tuiles_supplementaires);
+        // Remplir le labyrinthe avec les tuiles supplémentaires
+        int tuiles_pos = 0;
+        for (int i = 1; i < LIGNES - 1; i += 2) {
+            for (int j = 1; j < COLONNES - 1; j += 2) {
+                labyrinthe[i][j] = tuiles_supplementaires[tuiles_pos];
+                tuiles_pos++;
+            }
+        }
+
+        // afficher les emplacements des joueurs et des trésors des tuiles fixes
+
+
+        // Afficher le labyrinthe
+        afficherLabyrinthe();
+        printf("Si vous voulez quitter, tapez 1");
+        scanf("%s",&quitter);
+        return 0;
+    }
+}
