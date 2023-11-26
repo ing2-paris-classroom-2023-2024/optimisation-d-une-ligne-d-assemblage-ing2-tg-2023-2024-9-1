@@ -1,7 +1,27 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "source.c"
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
-#include "header.h"
+
+typedef struct sommet{ //sommet -> numero et nom
+    int numero;
+    char *nom;
+}t_sommet;
+
+typedef struct graphe{ //meme chose, mais ici on voit les tableaux de sommets et matrices
+    int **matrice;
+    int ordre;
+    t_sommet *tab;
+}t_graphe;
+
+t_sommet initialiser(int num, char *nom_sommet); //initialisation
+void initialiser_graphe(int ordre, t_graphe *graphe);
+void lire_fichier(t_graphe *graphe);
+void affichage(t_graphe *graphe);
+
 
 
 t_sommet initialiser(int numero, char *nom_sommet){ //assigner le nom et le numero du sommet lu
