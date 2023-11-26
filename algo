@@ -1,0 +1,74 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+// Structure pour représenter un graphe par matrice d'adjacence
+typedef struct Graph {
+    int V; // Nombre de sommets
+    int** adjacencyMatrix; // Matrice d'adjacence
+} Graph;
+
+// Fonction pour allouer dynamiquement une matrice VxV
+int** createAdjacencyMatrix(int V) {
+    int** matrix = (int**)malloc(V * sizeof(int*));
+    for (int i = 0; i < V; i++) {
+        matrix[i] = (int*)malloc(V * sizeof(int));
+        for (int j = 0; j < V; j++) {
+            matrix[i][j] = 0; // Initialiser la matrice à zéro
+        }
+    }
+    return matrix;
+}
+
+// Fonction pour charger un graphe à partir d'un fichier texte
+Graph* loadGraphFromFile(const char* filename) {
+    FILE* file = fopen(filename, "r");
+    if (file == NULL) {
+        perror("Erreur lors de l'ouverture du fichier");
+        exit(1);
+    }
+
+    Graph* graph = (Graph*)malloc(sizeof(Graph));
+    if (graph == NULL) {
+        perror("Erreur d'allocation mémoire");
+        exit(1);
+    }
+
+    fscanf(file, "%d", &graph->V); // Lire le nombre de sommets
+    graph->adjacencyMatrix = createAdjacencyMatrix(graph->V);
+
+    int numEdges;
+    fscanf(file, "%d", &numEdges); // Lire le nombre d'arêtes
+
+    for (int i = 0; i < numEdges; i++) {
+        int source, dest, weight;
+        fscanf(file, "%d %d %d", &source, &dest, &weight);
+        graph->adjacencyMatrix[source][dest] = weight;
+        graph->adjacencyMatrix[dest][source] = weight; // Non orienté, donc symétrique
+    }
+
+    fclose(file);
+    return graph;
+}
+
+int main() {
+    const char* filename = "C:\\Users\\Malo\\Desktop\\TP3\\oriente.txt";
+    Graph* graph = loadGraphFromFile(filename);
+
+    // Afficher la matrice d'adjacence du graphe
+    printf("Matrice d'adjacence du graphe :\n");
+    for (int i = 0; i < graph->V; i++) {
+        for (int j = 0; j < graph->V; j++) {
+            printf("%d ", graph->adjacencyMatrix[i][j]);
+        }
+        printf("\n");
+    }
+
+    // Libérer la mémoire
+    for (int i = 0; i < graph->V; i++) {
+        free(graph->adjacencyMatrix[i]);
+    }
+    free(graph->adjacencyMatrix);
+    free(graph);
+
+    return 0;
+}
