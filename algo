@@ -132,26 +132,3 @@ Graph* loadGraphFromFile(const char* filename) {
     fclose(file);
     return graph;
 }
-
-int main() {
-    const char* filename = "C:\\Users\\Malo\\Desktop\\TP3\\oriente.txt";
-    Graph* graph = loadGraphFromFile(filename);
-
-    // Afficher la matrice d'adjacence du graphe
-    printf("Matrice d'adjacence du graphe :\n");
-    for (int i = 0; i < graph->V; i++) {
-        for (int j = 0; j < graph->V; j++) {
-            printf("%d ", graph->adjacencyMatrix[i][j]);
-        }
-        printf("\n");
-    }
-
-    // Libérer la mémoire
-    for (int i = 0; i < graph->V; i++) {
-        free(graph->adjacencyMatrix[i]);
-    }
-    free(graph->adjacencyMatrix);
-    free(graph);
-
-    return 0;
-}
