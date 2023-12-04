@@ -1,0 +1,27 @@
+#include <stdio.h>
+#include <time.h>
+
+int main() {
+    // Obtenir le temps actuel
+    time_t tempsDebut, tempsActuel;
+    time(&tempsDebut);
+
+    // Compter le temps pendant 10 secondes (par exemple)
+    int duree = 10; // en secondes
+    int tempsEcoule = 0;
+
+    while (tempsEcoule < duree) {
+        // Obtenir le temps actuel
+        time(&tempsActuel);
+
+        // Calculer le temps écoulé en secondes
+        tempsEcoule = tempsActuel - tempsDebut;
+
+        // Afficher le temps écoulé
+        printf("Temps ecoule : %d secondes\n", tempsEcoule);
+    }
+
+    printf("Temps ecoule total : %d secondes\n", tempsEcoule);
+
+    return 0;
+}
