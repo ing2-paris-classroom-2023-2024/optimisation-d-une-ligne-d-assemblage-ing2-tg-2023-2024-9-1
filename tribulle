@@ -1,0 +1,15 @@
+    for (int i = 0; i < donnees->nbOperations - 1; ++i) {
+        for (int j = 0; j < donnees->nbOperations - i - 1; ++j) {
+            if (donnees->nbPredecesseurs[j] > donnees->nbPredecesseurs[j + 1]) {
+                // echanger les positions des operations et de leurs nombres de predecesseurs
+                int temp = donnees->nbPredecesseurs[j];
+                donnees->nbPredecesseurs[j] = donnees->nbPredecesseurs[j + 1];
+                donnees->nbPredecesseurs[j + 1] = temp;
+
+                temp = donnees->operationsTriees[j];
+                donnees->operationsTriees[j] = donnees->operationsTriees[j + 1];
+                donnees->operationsTriees[j + 1] = temp;
+            }
+        }
+    }
+}
