@@ -1,0 +1,7 @@
+float calculerSommeTemps(donneeope *donnees) {
+    float somme = 0;
+    for (int i = 0; i < donnees->nbOperations; ++i) {
+        somme += donnees->temps[donnees->operationsTriees[i]];
+    }
+    return somme;
+}
