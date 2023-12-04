@@ -1,0 +1,15 @@
+void lirefichiertemps(donneeope *donnees) {
+    FILE *fichier = fopen("operations.txt", "r");
+    if (fichier == NULL) {
+        printf("Impossible d'ouvrir le fichier.\n");
+        return;
+    }
+
+    int operation;
+    float tempsope;
+    while (fscanf(fichier, "%d %f", &operation, &tempsope) == 2) {
+        donnees->temps[operation - 1] = tempsope;
+    }
+
+    fclose(fichier);
+}
