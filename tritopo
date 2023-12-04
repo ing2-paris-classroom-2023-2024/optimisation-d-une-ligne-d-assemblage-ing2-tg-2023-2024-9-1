@@ -1,0 +1,18 @@
+void tritopo(donneeope *donnees) {
+    int degre[MAXOPE] = {0};
+    int queue[MAXOPE];
+    int devant = 0;
+    int derriere = -1;
+
+    // Initialiser la file avec les operations sans predecesseurs
+    for (int i = 0; i < donnees->nbOperations; ++i) {
+        int current = donnees->operationsTriees[i];
+        for (int j = 0; j < donnees->nbOperations; ++j) {
+            if (donnees->precedences[j][current]) {
+                degre[current]++;
+            }
+        }
+        if (degre[current] == 0) {
+            queue[++derriere] = current;
+        }
+    }
