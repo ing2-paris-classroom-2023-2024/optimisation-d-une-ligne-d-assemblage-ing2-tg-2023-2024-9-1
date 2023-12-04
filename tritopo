@@ -16,3 +16,18 @@ void tritopo(donneeope *donnees) {
             queue[++derriere] = current;
         }
     }
+
+    // Effectuer le tri topologique
+    while (devant <= derriere) {
+        int current = queue[devant++];
+        donnees->operationsTriees[devant - 1] = current;
+
+        for (int i = 0; i < donnees->nbOperations; ++i) {
+            if (donnees->precedences[current][i]) {
+                if (--degre[i] == 0) {
+                    queue[++derriere] = i;
+                }
+            }
+        }
+    }
+}
