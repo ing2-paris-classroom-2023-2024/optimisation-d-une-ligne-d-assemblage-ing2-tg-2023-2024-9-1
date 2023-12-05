@@ -1,0 +1,15 @@
+void lireFichierExclusions(donneeope *donnees) {
+    FILE *fichier = fopen("exclusions.txt", "r");
+    if (fichier == NULL) {
+        printf("Impossible d'ouvrir le fichier d'exclusions.\n");
+        return;
+    }
+
+    int ope1, ope2;
+    while (fscanf(fichier, "%d %d", &ope1, &ope2) == 2) {
+        donnees->exclusion[ope1 - 1][ope2 - 1] = 1;
+        donnees->exclusion[ope2 - 1][ope1 - 1] = 1;
+    }
+
+    fclose(fichier);
+}
