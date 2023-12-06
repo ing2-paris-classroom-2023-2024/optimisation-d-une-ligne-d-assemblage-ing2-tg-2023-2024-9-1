@@ -1,0 +1,41 @@
+int main() {
+    donneeope donnees;
+    creermatrcie(&donnees);
+    lirefichierprece(&donnees);
+    lireFichierExclusions(&donnees);
+    //afficherGraphePrecedenceConsole(&donnees);
+    //afficherGrapheexcluConsole(&donnees);
+    trierOperations(&donnees);
+    tritopo(&donnees);
+
+    /*printf("\nOrdre trie des operations : ");
+    for (int i = 0; i < donnees.nbOperations; ++i) {
+        printf("%d ", donnees.operationsTriees[i] + 1);
+    }*/
+    printf("\n");
+
+    lirefichiertemps(&donnees);
+    float sommeTemps = calculerSommeTemps(&donnees);
+    //printf("Somme des temps : %.2f\n", sommeTemps);
+
+    // Lire le temps de cycle depuis le fichier temps_cycle.txt (à ajuster selon le format du fichier)
+    FILE *fichierCycle = fopen("temps_cycle.txt", "r");
+    if (fichierCycle == NULL) {
+        printf("Impossible d'ouvrir le fichier temps_cycle.txt.\n");
+        return 1;
+    }
+
+    float tempsCycle;
+    if (fscanf(fichierCycle, "%f", &tempsCycle) != 1) {
+        printf("Erreur de lecture du temps de cycle.\n");
+        fclose(fichierCycle);
+        return 1;
+    }
+
+    fclose(fichierCycle);
+
+    printf("\nTemps de cycle : %.2f\n", tempsCycle);
+    repartirEnStations(&donnees, tempsCycle);
+
+    return 0;
+}
