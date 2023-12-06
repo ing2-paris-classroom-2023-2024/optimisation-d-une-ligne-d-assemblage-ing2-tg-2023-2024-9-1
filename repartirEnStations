@@ -1,0 +1,97 @@
+void repartirEnStations(donneeope *donnees, float tempsCycle) {
+    int *stationAssignee = (int *)malloc(donnees->nbOperations * sizeof(int));
+    int **stationOperations = (int **)malloc(tempsCycle * sizeof(int *)); // Tableau de pointeurs vers les opérations de chaque station
+
+    // Initialiser les stations assignees à -1 (non assignees)
+    for (int i = 0; i < donnees->nbOperations; ++i) {
+        stationAssignee[i] = -1;
+    }
+
+    // Initialiser le tableau de pointeurs pour les opérations de chaque station
+    for (int s = 0; s < tempsCycle; ++s) {
+        stationOperations[s] = (int *)calloc(donnees->nbOperations, sizeof(int));
+    }
+
+    printf("\nRepartition en stations :\n");
+
+    for (int i = 0; i < donnees->nbOperations; ++i) {
+        int currentOperation = donnees->operationsTriees[i];
+
+        // Verifier si l'operation est dejà assignee
+        if (stationAssignee[currentOperation] != -1) {
+            continue;
+        }
+
+        // Verifier les contraintes d'exclusion, de precedence et de temps
+        for (int s = 0; s < tempsCycle; ++s) {
+            if (stationAssignee[currentOperation] != -1) {
+                // L'operation a dejà ete assignee, passer à la suivante
+                break;
+            }
+
+            // Verifier les contraintes d'exclusion pour la station actuelle
+            int stationValide = 1;
+            for (int j = 0; j < i; ++j) {
+                int previousOperation = donnees->operationsTriees[j];
+                int assignedStation = stationAssignee[previousOperation];
+                if (assignedStation == s && donnees->exclusion[currentOperation][previousOperation]) {
+                    stationValide = 0;
+                    break;
+                }
+            }
+
+            // Verifier les contraintes de precedence pour la station actuelle
+            for (int j = 0; j < donnees->nbOperations; ++j) {
+                if (donnees->precedences[j][currentOperation] && stationAssignee[j] > s) {
+                    stationValide = 0;
+                    break;
+                }
+            }
+
+            // Verifier la contrainte de temps pour la station actuelle
+            float tempsStation = 0;
+            for (int j = 0; j <= i; ++j) {
+                int previousOperation = donnees->operationsTriees[j];
+                if (stationAssignee[previousOperation] == s) {
+                    tempsStation += donnees->temps[previousOperation];
+                }
+            }
+
+            if (stationValide && tempsStation + donnees->temps[currentOperation] <= tempsCycle) {
+                // Assigner l'operation à la station actuelle
+                stationAssignee[currentOperation] = s;
+
+                // Retirer l'allocation avec calloc pour permettre des valeurs non nulles
+                stationOperations[s][currentOperation] = 1;
+
+                if (donnees->temps[currentOperation] > 0.001) {
+                    // Afficher l'operation uniquement si elle a une duree significative
+                    printf("Station %d : operation %d (%.2f)\n", s + 1, currentOperation + 1, donnees->temps[currentOperation]);
+                }
+                break;
+            }
+        }
+    }
+
+    // Afficher les operations de chaque station
+    for (int s = 0; s < tempsCycle; ++s) {
+        if (stationOperations[s] != NULL) {
+            printf("\nOperations de la Station %d : ", s + 1);
+            for (int op = 0; op < donnees->nbOperations; ++op) {
+                if (stationOperations[s][op] == 1 && donnees->temps[op] > 0.001) {
+                    printf("%d ", op + 1);
+                }
+            }
+        }
+    }
+
+    free(stationAssignee);
+
+    // Liberer la memoire allouee pour le tableau de pointeurs
+    for (int s = 0; s < tempsCycle; ++s) {
+        if (stationOperations[s] != NULL) {
+            free(stationOperations[s]);
+        }
+    }
+    free(stationOperations);
+}
