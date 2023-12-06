@@ -1,0 +1,24 @@
+void lirefichierprece(donneeope *donnees) {
+    FILE *fichier = fopen("precedences.txt", "r");
+    if (fichier == NULL) {
+        printf("Impossible d'ouvrir le fichier.\n");
+        return;
+    }
+
+    int ope1;
+    int ope2;
+    while (fscanf(fichier, "%d %d", &ope1, &ope2) == 2) {
+        donnees->precedences[ope1 - 1][ope2 - 1] = 1;
+        donnees->nbPredecesseurs[ope2 - 1]++;
+        if (ope1 > donnees->nbOperations) {
+            donnees->nbOperations = ope1;
+        }
+
+        if (ope2 > donnees->nbOperations) {
+            donnees->nbOperations = ope2;
+        }
+
+    }
+
+    fclose(fichier);
+}
