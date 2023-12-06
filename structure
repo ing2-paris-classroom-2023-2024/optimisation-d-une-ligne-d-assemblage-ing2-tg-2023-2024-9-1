@@ -1,0 +1,8 @@
+typedef struct {
+    int precedences[MAXOPE][MAXOPE];
+    int nbOperations;
+    int operationsTriees[MAXOPE];
+    int nbPredecesseurs[MAXOPE];
+    float temps[MAXOPE];
+    int exclusion[MAXOPE][MAXOPE];
+} donneeope;
